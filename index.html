@@ -1,16 +1,415 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Birthday Button Game</title>
-    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Birthday Surprise 🎂</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --pink: #ff4f8b;
+      --dark-pink: #df2869;
+      --purple: #854dff;
+      --cream: #fff8f1;
+      --ink: #3d2845;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 20%, #ffd8ea 0 6%, transparent 7%),
+        radial-gradient(circle at 85% 75%, #d9c6ff 0 7%, transparent 8%),
+        linear-gradient(135deg, #fff1f7, #eee5ff);
+    }
+
+    .page {
+      display: none;
+      min-height: 100vh;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page.active {
+      display: flex;
+      animation: pageIn 0.65s ease both;
+    }
+
+    .card {
+      width: min(620px, 100%);
+      padding: 44px 28px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.88);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      border-radius: 30px;
+      box-shadow: 0 24px 70px rgba(87, 40, 107, 0.2);
+      backdrop-filter: blur(12px);
+      position: relative;
+      z-index: 2;
+    }
+
+    .gift {
+      font-size: 72px;
+      display: inline-block;
+      animation: bounce 1.6s ease-in-out infinite;
+      filter: drop-shadow(0 8px 8px rgba(224, 47, 111, 0.2));
+    }
+
+    h1 {
+      margin: 12px 0;
+      font-size: clamp(2rem, 7vw, 3.7rem);
+      line-height: 1.05;
+      color: var(--dark-pink);
+    }
+
+    .subtitle {
+      margin: 10px auto 30px;
+      max-width: 470px;
+      font-size: clamp(1rem, 4vw, 1.25rem);
+      line-height: 1.6;
+      color: #715879;
+    }
+
+    .question {
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      font-weight: 800;
+      margin: 14px 0 26px;
+    }
+
+    .button-area {
+      min-height: 150px;
+      position: relative;
+      width: 100%;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 15px 35px;
+      min-width: 120px;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.08rem;
+      cursor: pointer;
+      color: white;
+      box-shadow: 0 9px 20px rgba(72, 39, 80, 0.2);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 13px 24px rgba(72, 39, 80, 0.25);
+    }
+
+    #yesBtn {
+      background: linear-gradient(135deg, #ff4f8b, #ff7657);
+      position: absolute;
+      left: calc(50% - 135px);
+      top: 20px;
+    }
+
+    #noBtn {
+      background: linear-gradient(135deg, #8855e9, #6040b9);
+      position: fixed;
+      z-index: 20;
+      transition: left 0.17s ease, top 0.17s ease;
+    }
+
+    #warning {
+      min-height: 30px;
+      margin-top: 4px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #e02d68;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: 0.25s ease;
+    }
+
+    #warning.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .wish-card {
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+
+    .cake {
+      font-size: 70px;
+      animation: cakeDance 1.4s ease-in-out infinite alternate;
+    }
+
+    .wishes {
+      list-style: none;
+      display: grid;
+      gap: 13px;
+      margin-top: 25px;
+      text-align: left;
+    }
+
+    .wishes li {
+      padding: 15px 17px;
+      border-radius: 17px;
+      background: linear-gradient(110deg, #fff1f7, #f6efff);
+      border-left: 5px solid var(--pink);
+      line-height: 1.45;
+      font-size: 1rem;
+      animation: wishIn 0.55s ease both;
+    }
+
+    .wishes li:nth-child(2) { animation-delay: 0.12s; }
+    .wishes li:nth-child(3) { animation-delay: 0.24s; }
+    .wishes li:nth-child(4) { animation-delay: 0.36s; }
+    .wishes li:nth-child(5) { animation-delay: 0.48s; }
+
+    .signature {
+      margin-top: 25px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--dark-pink);
+    }
+
+    .confetti {
+      position: fixed;
+      top: -20px;
+      width: 11px;
+      height: 18px;
+      border-radius: 3px;
+      z-index: 30;
+      pointer-events: none;
+      animation: fall linear forwards;
+    }
+
+    .floating {
+      position: absolute;
+      opacity: 0.3;
+      font-size: clamp(28px, 6vw, 55px);
+      animation: float 5s ease-in-out infinite;
+    }
+
+    .f1 { left: 5%; top: 10%; }
+    .f2 { right: 7%; top: 15%; animation-delay: 1s; }
+    .f3 { left: 8%; bottom: 9%; animation-delay: 2s; }
+    .f4 { right: 6%; bottom: 8%; animation-delay: 3s; }
+
+    @keyframes pageIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0) rotate(-4deg); }
+      50% { transform: translateY(-12px) rotate(4deg); }
+    }
+
+    @keyframes cakeDance {
+      from { transform: rotate(-5deg) scale(1); }
+      to { transform: rotate(5deg) scale(1.08); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-8deg); }
+      50% { transform: translateY(-20px) rotate(8deg); }
+    }
+
+    @keyframes wishIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(900deg);
+        opacity: 0.7;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .card {
+        padding: 32px 18px;
+        border-radius: 23px;
+      }
+
+      #yesBtn {
+        left: 8%;
+      }
+
+      button {
+        min-width: 105px;
+        padding: 13px 24px;
+      }
+
+      .wishes li {
+        font-size: 0.93rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section id="questionPage" class="page active">
+    <span class="floating f1">💖</span>
+    <span class="floating f2">✨</span>
+    <span class="floating f3">🎈</span>
+    <span class="floating f4">🌸</span>
+
+    <main class="card">
+      <div class="gift">🎁</div>
+      <h1>Hello, Sister!</h1>
+      <p class="subtitle">Before you receive your birthday surprise, answer one extremely serious question...</p>
+      <div class="question">Do you like me? 😇</div>
+
+      <div class="button-area" id="buttonArea">
+        <button id="yesBtn">Yes 💖</button>
+      </div>
+      <p id="warning">Click Yes 😡</p>
+    </main>
+
+    <button id="noBtn">No 🙄</button>
+  </section>
+
+  <section id="birthdayPage" class="page">
+    <span class="floating f1">🎉</span>
+    <span class="floating f2">🎊</span>
+    <span class="floating f3">💝</span>
+    <span class="floating f4">🥳</span>
+
+    <main class="card wish-card">
+      <div class="cake">🎂</div>
+      <h1>Happy Birthday, Subha!</h1>
+      <p class="subtitle">You chose wisely. Your prize is a page full of birthday love. 💕</p>
+
+      <ul class="wishes">
+        <li>🌟 May your new year be full of happiness, beautiful memories, and exciting adventures.</li>
+        <li>💖 Thank you for being an amazing sister, trusted friend, and my favourite troublemaker.</li>
+        <li>🎁 May every dream in your heart slowly turn into something wonderfully real.</li>
+        <li>😊 Keep smiling, laughing, and making everyone around you happier just by being yourself.</li>
+        <li>🎉 I hope today brings you enough cake, presents, love, and joy to last the entire year!</li>
+      </ul>
+
+      <p class="signature">With lots of love, from your sibling 💝</p>
+    </main>
+  </section>
+
+  <script>
+    const noButton = document.getElementById("noBtn");
+    const yesButton = document.getElementById("yesBtn");
+    const warning = document.getElementById("warning");
+    const questionPage = document.getElementById("questionPage");
+    const birthdayPage = document.getElementById("birthdayPage");
+
+    let escapeCount = 0;
+    let lastEscape = 0;
+
+    function setInitialNoPosition() {
+      const yesRect = yesButton.getBoundingClientRect();
+      const width = noButton.offsetWidth;
+      const left = Math.min(
+        window.innerWidth - width - 12,
+        yesRect.right + 25
+      );
+      noButton.style.left = Math.max(12, left) + "px";
+      noButton.style.top = yesRect.top + "px";
+    }
+
+    function moveNoButton() {
+      const now = Date.now();
+      if (now - lastEscape < 130) return;
+      lastEscape = now;
+      escapeCount++;
+
+      const padding = 14;
+      const maxX = Math.max(padding, window.innerWidth - noButton.offsetWidth - padding);
+      const maxY = Math.max(padding, window.innerHeight - noButton.offsetHeight - padding);
+
+      let x;
+      let y;
+      let tries = 0;
+      const yesRect = yesButton.getBoundingClientRect();
+
+      do {
+        x = padding + Math.random() * (maxX - padding);
+        y = padding + Math.random() * (maxY - padding);
+        tries++;
+      } while (
+        tries < 30 &&
+        x < yesRect.right + 45 &&
+        x + noButton.offsetWidth > yesRect.left - 45 &&
+        y < yesRect.bottom + 45 &&
+        y + noButton.offsetHeight > yesRect.top - 45
+      );
+
+      noButton.style.left = x + "px";
+      noButton.style.top = y + "px";
+
+      if (escapeCount >= 5) {
+        warning.classList.add("show");
+        warning.textContent = escapeCount >= 8
+          ? "There is only one correct answer: YES 😡"
+          : "Click Yes 😡";
+      }
+    }
+
+    noButton.addEventListener("mouseenter", moveNoButton);
+    noButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      moveNoButton();
+    });
+    noButton.addEventListener("click", moveNoButton);
+
+    document.addEventListener("mousemove", (event) => {
+      if (!questionPage.classList.contains("active")) return;
+
+      const rect = noButton.getBoundingClientRect();
+      const nearestX = Math.max(rect.left, Math.min(event.clientX, rect.right));
+      const nearestY = Math.max(rect.top, Math.min(event.clientY, rect.bottom));
+      const distance = Math.hypot(event.clientX - nearestX, event.clientY - nearestY);
+
+      if (distance < 65) moveNoButton();
+    });
+
+    yesButton.addEventListener("click", () => {
+      noButton.style.display = "none";
+      questionPage.classList.remove("active");
+      birthdayPage.classList.add("active");
+      launchConfetti();
+    });
+
+    function launchConfetti() {
+      const colors = ["#ff4f8b", "#854dff", "#ffc83d", "#47c9a2", "#ff7657"];
+
+      for (let i = 0; i < 120; i++) {
+        const piece = document.createElement("span");
+        piece.className = "confetti";
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = 2.5 + Math.random() * 3 + "s";
+        piece.style.animationDelay = Math.random() * 1.5 + "s";
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        document.body.appendChild(piece);
+
+        setTimeout(() => piece.remove(), 6500);
+      }
+    }
+
+    window.addEventListener("load", setInitialNoPosition);
+    window.addEventListener("resize", () => {
+      if (questionPage.classList.contains("active")) setInitialNoPosition();
+    });
+  </script>
+</body>
 </html>
